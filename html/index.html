@@ -3,95 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AX Territory</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>AX Territory V2</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600&family=Fugaz+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="territory-ui" class="territory-container">
-        <!-- UI para territorio LIBRE -->
-        <div id="free-state" class="territory-card">
+    <div id="territory-ui" class="hidden">
+        <!-- UI Estado Libre -->
+        <div id="free-state" class="territory-container hidden">
             <div class="territory-header">
-                <i class="fas fa-flag"></i>
-                <h2 class="territory-name">NOMBRE TERRITORIO</h2>
-            </div>
-            <div class="territory-body">
-                <div class="status-section">
-                    <p class="status-label">ESTADO</p>
-                    <p class="status-value free">LIBRE</p>
+                <div class="header-icon">
+                    <i class="fas fa-map-marker-alt"></i>
                 </div>
-                <div class="capture-section-free">
-                    <p class="capture-instructions">
-                        <i class="fas fa-swords"></i>
-                        Para comenzar la captura usa <span class="command">/capturar</span>
-                    </p>
-                    <p class="capture-warning">Se iniciará una disputa por el territorio</p>
+                <h1 class="territory-name"></h1>
+            </div>
+            <div class="territory-content">
+                <div class="status-badge free">
+                    <i class="fas fa-flag"></i>
+                    <span>LIBRE</span>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <p class="info-text"></p>
                 </div>
             </div>
-            <div class="ui-hint">
+            <div class="footer-hint">
                 <i class="fas fa-eye-slash"></i>
-                <span>Presiona <span class="key">F6</span> para ocultar</span>
+                <span class="hint-text"></span>
             </div>
         </div>
 
-        <!-- UI para territorio EN DISPUTA -->
-        <div id="contested-state" class="territory-card">
-            <div class="territory-header contested">
-                <i class="fas fa-crosshairs"></i>
-                <h2 class="territory-title">CONQUISTA EN PROGRESO</h2>
+        <!-- UI Conquista en Progreso -->
+        <div id="dispute-state" class="territory-container hidden">
+            <div class="territory-header dispute">
+                <div class="header-icon pulse">
+                    <i class="fas fa-crosshairs"></i>
+                </div>
+                <h1 class="header-title">CONQUISTA EN PROGRESO</h1>
             </div>
-            <div class="territory-body">
-                <div class="capture-section">
-                    <p class="capture-label">CONQUISTANDO</p>
-                    <div class="gangs-progress" id="gangs-progress">
-                        <!-- Dinámico: barras de progreso por banda -->
+            <div class="territory-content">
+                <div class="timer-bar-container">
+                    <div class="timer-info">
+                        <span class="timer-label">TIEMPO TRANSCURRIDO</span>
+                        <span id="capture-timer" class="timer-value">0:00</span>
+                    </div>
+                    <div class="timer-progress-bar">
+                        <div id="timer-progress-fill" class="timer-fill"></div>
                     </div>
                 </div>
+                
+                <div class="conquest-title">
+                    <i class="fas fa-users"></i>
+                    <span>BANDAS COMPITIENDO</span>
+                </div>
+                
+                <div id="gangs-progress" class="gangs-list"></div>
             </div>
-            <div class="ui-hint">
+            <div class="footer-hint">
                 <i class="fas fa-eye-slash"></i>
-                <span>Presiona <span class="key">F6</span> para ocultar</span>
+                <span class="hint-text"></span>
             </div>
         </div>
 
-        <!-- UI para territorio CAPTURADO -->
-        <div id="captured-state" class="territory-card">
-            <div class="territory-header">
-                <i class="fas fa-crown"></i>
-                <h2 class="territory-name">NOMBRE TERRITORIO</h2>
+        <!-- UI Estado Capturado -->
+        <div id="captured-state" class="territory-container hidden">
+            <div class="territory-header captured">
+                <div class="header-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h1 class="territory-name"></h1>
             </div>
-            <div class="territory-body">
-                <div class="status-section">
-                    <p class="status-label">ESTADO</p>
-                    <p class="status-value" id="captured-status">EN COOLDOWN</p>
-                </div>
-                <div class="owner-section">
-                    <p class="owner-label">CONTROLADO POR</p>
-                    <p class="owner-value" id="owner-name">BANDA</p>
-                </div>
-                <div class="timer-section" id="timer-section">
-                    <p class="timer-label">TIEMPO RESTANTE</p>
-                    <div class="timer-display" id="timer-display">
-                        <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+            <div class="territory-content">
+                <div id="status-badge-captured" class="status-badge"></div>
+                
+                <div class="owner-card">
+                    <div class="owner-label">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>CONTROLADO POR</span>
                     </div>
+                    <div id="owner-name" class="owner-name"></div>
                 </div>
-                <div class="attack-section" id="attack-section">
-                    <p class="attack-instructions">
+                
+                <div id="countdown-section" class="countdown-section">
+                    <div class="countdown-label">
+                        <i class="fas fa-clock"></i>
+                        <span>TIEMPO RESTANTE</span>
+                    </div>
+                    <div id="countdown-timer" class="countdown-display"></div>
+                </div>
+                
+                <div id="attack-info" class="info-card attack hidden">
+                    <div class="info-icon attack">
                         <i class="fas fa-exclamation-triangle"></i>
-                        Para atacar este territorio usa <span class="command">/atacar</span>
-                    </p>
-                    <p class="attack-warning">Todas las bandas serán alertadas</p>
+                    </div>
+                    <p class="info-text"></p>
                 </div>
             </div>
-            <div class="ui-hint">
+            <div class="footer-hint">
                 <i class="fas fa-eye-slash"></i>
-                <span>Presiona <span class="key">F6</span> para ocultar</span>
+                <span class="hint-text"></span>
             </div>
         </div>
     </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

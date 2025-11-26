@@ -2,7 +2,7 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-author 'Andres'
+author 'AXStudio'
 description 'Sistema de Territorios para Bandas - NEW ESX 1.13.4'
 version '1.0.0'
 

@@ -1,90 +1,108 @@
 Config = {}
 
 -- Configuración General
-Config.AdminGroup = 'admin' -- Grupo que puede usar el comando /territorys
+Config.Framework = 'esx'
+Config.Locale = 'es'
 
--- Zona de Edición
-Config.ZoneEditor = {
-    DefaultSize = 50.0, -- Tamaño inicial del territorio
-    MinSize = 10.0, -- Tamaño mínimo
-    MaxSize = 500.0, -- Tamaño máximo
-    MoveSpeed = {
-        Normal = 1.0,
-        Fast = 3.0 -- Con SHIFT presionado
-    },
-    SizeSpeed = 2.0,
-    RotationSpeed = 2.0,
-    ZoneHeight = 50.0, -- Altura de la zona
-    ZoneColor = {r = 255, g = 0, b = 0, a = 100} -- Color rojo semitransparente
-}
+-- Permisos
+Config.AdminGroup = 'admin'
 
--- Colores para los territorios
-Config.TerritoryColors = {
-    ['ballas'] = {r = 128, g = 0, b = 128, a = 100}, -- Morado
-    ['families'] = {r = 0, g = 255, b = 0, a = 100}, -- Verde
-    ['vagos'] = {r = 255, g = 255, b = 0, a = 100}, -- Amarillo
-    ['marabunta'] = {r = 0, g = 191, b = 255, a = 100}, -- Azul claro
-    ['bloods'] = {r = 255, g = 0, b = 0, a = 100}, -- Rojo
-    ['default'] = {r = 200, g = 200, b = 200, a = 100} -- Gris
-}
+-- Configuración de Territorios
+Config.DefaultZoneColor = {r = 255, g = 0, b = 0, a = 100}
+Config.ZoneHeight = 50.0 -- Altura del área de captura
 
--- Blip para visualización
-Config.EditorBlip = {
-    sprite = 1,
-    color = 1,
-    alpha = 180
-}
-
--- Sistema de Captura
-Config.CaptureSystem = {
-    PointsPerSecond = 1, -- Puntos que gana cada jugador por segundo en la zona
-    CaptureTime = 300, -- 5 minutos (300 segundos) tiempo máximo de captura
-    PointsToCapture = 100, -- Puntos necesarios para capturar al 100%
-    CooldownTime = 7200, -- 2 horas (7200 segundos) de cooldown después de capturar
-    RespawnTime = 30, -- 30 segundos para volver a contar después de morir
-    AttackCommand = '/atacar', -- Comando para atacar un territorio en cooldown
-    UIToggleKey = 'F6' -- Tecla para ocultar/mostrar UI
-}
-
--- Jobs de bandas que pueden capturar
-Config.GangJobs = {
+Config.Gangs = {
     ['ballas'] = {
-        label = 'Ballas',
-        color = {r = 128, g = 0, b = 128}, -- Morado
-        blipColor = 27
-    },
-    ['families'] = {
-        label = 'Families',
-        color = {r = 0, g = 255, b = 0}, -- Verde
-        blipColor = 2
+        name = 'Ballas',
+        color = {r = 145, g = 0, b = 200, a = 120} -- Morado
     },
     ['vagos'] = {
-        label = 'Vagos',
-        color = {r = 255, g = 255, b = 0}, -- Amarillo
-        blipColor = 5
+        name = 'Vagos',
+        color = {r = 255, g = 215, b = 0, a = 120} -- Amarillo oro
+    },
+    ['families'] = {
+        name = 'Families',
+        color = {r = 0, g = 200, b = 0, a = 120} -- Verde gang
     },
     ['marabunta'] = {
-        label = 'Marabunta',
-        color = {r = 0, g = 191, b = 255}, -- Azul claro
-        blipColor = 3
+        name = 'Marabunta',
+        color = {r = 0, g = 180, b = 255, a = 120} -- Azul celeste
     },
-    ['bloods'] = {
-        label = 'Bloods',
-        color = {r = 255, g = 0, b = 0}, -- Rojo
-        blipColor = 1
+    ['cartel'] = {
+        name = 'Cartel',
+        color = {r = 0, g = 40, b = 80, a = 120} -- Azul oscuro (estilo narco)
+    },
+    ['triad'] = {
+        name = 'Triad',
+        color = {r = 200, g = 0, b = 0, a = 120} -- Rojo intenso
     }
 }
 
--- Policía (pueden ver pero no capturar)
-Config.PoliceJob = {
-    job = 'police',
-    minGrade = 20, -- Rango mínimo para ver territorios
-    canCapture = true
+-- Configuración de Captura
+Config.CaptureTime = 20000 -- 20 segundos para capturar un punto
+Config.TimeBetweenPoints = 60 -- 1 minuto entre capturas de puntos
+Config.PointsToCapture = 3 -- Puntos necesarios para conquistar
+Config.TimeBetweenConquers = 7200 -- 2 horas de cooldown (en segundos)
+Config.CaptureReward = 50000 -- Dinero que gana la banda al capturar
+
+-- Textos
+Config.Locale = {
+    ['menu_title'] = 'TERRITORIOS',
+    ['create_territory'] = 'Crear Nuevo Territorio',
+    ['territory_name'] = 'Nombre del Territorio',
+    ['territory_name_desc'] = 'Ingresa el nombre para el nuevo territorio',
+    ['edit_zone'] = 'Editar Zona',
+    ['delete_territory'] = 'Eliminar',
+    ['confirm_delete'] = 'Confirmar Eliminacion',
+    ['confirm_delete_desc'] = 'Estas seguro de eliminar este territorio?',
+    ['territory_created'] = 'Territorio creado exitosamente',
+    ['territory_deleted'] = 'Territorio eliminado exitosamente',
+    ['zone_saved'] = 'Zona guardada exitosamente',
+    ['no_territories'] = 'No hay territorios creados',
+    ['no_permission'] = 'No tienes permisos para usar este comando',
+    ['zone_editor_title'] = 'EDITOR DE ZONA',
+    ['zone_editor_controls'] = 'Move: 8, 4, 5, 6 | Size: N, M | Rotate: 7, 9 | Speed: LSHIFT | Confirm: ENTER | Cancel: ESC',
 }
 
--- Colores de estado
-Config.StateColors = {
-    free = 0, -- Blanco
-    contested = 1, -- Rojo (parpadeante)
-    captured = nil -- Se usa el color de la banda
+-- Configuración de Police
+Config.PoliceJob = 'police'
+Config.PoliceRanksCanView = {
+    'boss',
+    'lieutenant',
+    'sergeant'
 }
+
+-- Configuración de Captura
+Config.CaptureTime = 60 -- 1 minuto (en segundos) para capturar
+Config.CaptureCheckInterval = 2000 -- Cada 2 segundos actualizar el progreso
+Config.PointsPerPlayer = 1 -- Puntos que suma cada jugador por intervalo
+Config.CooldownTime = 7200 -- 2 horas en segundos
+Config.HideUIKey = 'X' -- Tecla para ocultar UI
+
+-- Colores de zonas
+Config.FreeZoneColor = {r = 255, g = 255, b = 255, a = 100} -- Blanco
+Config.DisputeBlinkSpeed = 500 -- Velocidad de parpadeo en ms
+
+-- Comandos
+Config.CaptureCommand = 'capturar'
+Config.AttackCommand = 'atacar'
+
+-- Textos adicionales
+Config.Locale['police_cant_capture'] = 'La policia no puede capturar territorios'
+Config.Locale['not_gang_member'] = 'No eres miembro de una banda'
+Config.Locale['territory_free'] = 'LIBRE'
+Config.Locale['territory_cooldown'] = 'EN COOLDOWN'
+Config.Locale['territory_available'] = 'DISPONIBLE'
+Config.Locale['conquest_in_progress'] = 'CONQUISTA EN PROGRESO'
+Config.Locale['conquering'] = 'CONQUISTANDO'
+Config.Locale['controlled_by'] = 'CONTROLADO POR'
+Config.Locale['time_remaining'] = 'TIEMPO RESTANTE'
+Config.Locale['status'] = 'ESTADO'
+Config.Locale['capture_instructions'] = 'Usa /%s para comenzar a capturar este territorio'
+Config.Locale['attack_instructions'] = 'Usa /%s para atacar este territorio. TODAS LAS BANDAS SERAN ALERTADAS'
+Config.Locale['hide_ui_hint'] = 'Presiona %s para ocultar/mostrar la interfaz'
+Config.Locale['territory_under_attack'] = 'El territorio %s esta siendo atacado!'
+Config.Locale['free_zone'] = 'Liberar Zona'
+Config.Locale['zone_freed'] = 'Zona liberada exitosamente'
+Config.Locale['already_in_capture'] = 'Ya hay una captura en progreso en este territorio'
+Config.Locale['capture_started'] = 'Captura iniciada! Defiende el territorio!'
