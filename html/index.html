@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AX Territory</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600&family=Fugaz+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="territory-ui" class="territory-container">
+        <!-- UI para territorio LIBRE -->
+        <div id="free-state" class="territory-card">
+            <div class="territory-header">
+                <i class="fas fa-flag"></i>
+                <h2 class="territory-name">NOMBRE TERRITORIO</h2>
+            </div>
+            <div class="territory-body">
+                <div class="status-section">
+                    <p class="status-label">ESTADO</p>
+                    <p class="status-value free">LIBRE</p>
+                </div>
+                <div class="capture-section-free">
+                    <p class="capture-instructions">
+                        <i class="fas fa-swords"></i>
+                        Para comenzar la captura usa <span class="command">/capturar</span>
+                    </p>
+                    <p class="capture-warning">Se iniciará una disputa por el territorio</p>
+                </div>
+            </div>
+            <div class="ui-hint">
+                <i class="fas fa-eye-slash"></i>
+                <span>Presiona <span class="key">F6</span> para ocultar</span>
+            </div>
+        </div>
+
+        <!-- UI para territorio EN DISPUTA -->
+        <div id="contested-state" class="territory-card">
+            <div class="territory-header contested">
+                <i class="fas fa-crosshairs"></i>
+                <h2 class="territory-title">CONQUISTA EN PROGRESO</h2>
+            </div>
+            <div class="territory-body">
+                <div class="capture-section">
+                    <p class="capture-label">CONQUISTANDO</p>
+                    <div class="gangs-progress" id="gangs-progress">
+                        <!-- Dinámico: barras de progreso por banda -->
+                    </div>
+                </div>
+            </div>
+            <div class="ui-hint">
+                <i class="fas fa-eye-slash"></i>
+                <span>Presiona <span class="key">F6</span> para ocultar</span>
+            </div>
+        </div>
+
+        <!-- UI para territorio CAPTURADO -->
+        <div id="captured-state" class="territory-card">
+            <div class="territory-header">
+                <i class="fas fa-crown"></i>
+                <h2 class="territory-name">NOMBRE TERRITORIO</h2>
+            </div>
+            <div class="territory-body">
+                <div class="status-section">
+                    <p class="status-label">ESTADO</p>
+                    <p class="status-value" id="captured-status">EN COOLDOWN</p>
+                </div>
+                <div class="owner-section">
+                    <p class="owner-label">CONTROLADO POR</p>
+                    <p class="owner-value" id="owner-name">BANDA</p>
+                </div>
+                <div class="timer-section" id="timer-section">
+                    <p class="timer-label">TIEMPO RESTANTE</p>
+                    <div class="timer-display" id="timer-display">
+                        <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+                    </div>
+                </div>
+                <div class="attack-section" id="attack-section">
+                    <p class="attack-instructions">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Para atacar este territorio usa <span class="command">/atacar</span>
+                    </p>
+                    <p class="attack-warning">Todas las bandas serán alertadas</p>
+                </div>
+            </div>
+            <div class="ui-hint">
+                <i class="fas fa-eye-slash"></i>
+                <span>Presiona <span class="key">F6</span> para ocultar</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
