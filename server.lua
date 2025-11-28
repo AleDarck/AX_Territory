@@ -1,6 +1,19 @@
 local ESX = exports['es_extended']:getSharedObject()
 local territories = {}
 
+-- Locales
+local Locale = {
+    ['territory_created'] = 'Territorio creado exitosamente',
+    ['territory_deleted'] = 'Territorio eliminado exitosamente',
+    ['zone_saved'] = 'Zona guardada exitosamente',
+    ['no_permission'] = 'No tienes permisos para usar este comando',
+    ['not_gang_member'] = 'No eres miembro de una banda',
+    ['territory_under_attack'] = 'El territorio %s esta siendo atacado!',
+    ['already_in_capture'] = 'Ya hay una captura en progreso en este territorio',
+    ['capture_started'] = 'Captura iniciada! Defiende el territorio!',
+    ['zone_freed'] = 'Zona liberada exitosamente'
+}
+
 -- Cargar territorios desde la base de datos
 CreateThread(function()
     MySQL.query([[
@@ -15,6 +28,7 @@ CreateThread(function()
             `status` INT(1) NOT NULL DEFAULT 1,
             `last_capture` BIGINT(20) DEFAULT NULL,
             `last_point` BIGINT(20) DEFAULT NULL,
+            `custom_blip` INT(11) DEFAULT NULL,
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
@@ -38,11 +52,38 @@ function LoadTerritories()
                 points = territory.points and json.decode(territory.points) or {},
                 status = territory.status or 1,
                 last_capture = territory.last_capture,
-                last_point = territory.last_point
+                last_point = territory.last_point,
+                custom_blip = territory.custom_blip  -- AGREGAR ESTA LÍNEA
             }
         end
     end
 end
+
+-- Liberar territorios disponibles al iniciar el servidor
+CreateThread(function()
+    Wait(5000) -- Esperar a que todo cargue
+    
+    for id, territory in pairs(territories) do
+        if territory.status == 3 and territory.last_capture then
+            local elapsed = os.time() - territory.last_capture
+            
+            -- Si el cooldown ya pasó, liberar el territorio
+            if elapsed >= Config.CooldownTime then
+                territory.owner = nil
+                territory.status = 1
+                territory.last_capture = nil
+                territory.points = {}
+                territories[id] = territory
+                
+                MySQL.update('UPDATE ax_territories SET owner = NULL, status = 1, last_capture = NULL, points = NULL WHERE id = ?', {
+                    id
+                })
+                
+                print(string.format('[AX_Territory] Territorio "%s" liberado (cooldown expirado)', territory.name))
+            end
+        end
+    end
+end)
 
 -- Estado de capturas activas
 local activeCaptures = {}
@@ -75,6 +116,32 @@ function IsPoliceViewer(source)
     return false
 end
 
+-- Dar recompensa a la banda
+function GiveGangReward(gangName)
+    local gangAccount = Config.GangAccounts[gangName]
+    if not gangAccount then return end
+    
+    MySQL.update('INSERT INTO gang_black_money (gang_account, amount) VALUES (?, ?) ON DUPLICATE KEY UPDATE amount = amount + ?', {
+        gangAccount,
+        Config.CaptureReward,
+        Config.CaptureReward
+    })
+end
+
+-- Dar XP a la banda
+function GiveGangXP(gangName, amount)
+    if not Config.UseGangXPSystem then return end
+    
+    -- Verificar si el export existe
+    local success, result = pcall(function()
+        exports['AX_GangTab']:GiveGangXP(gangName, amount)
+    end)
+    
+    if not success then
+        print('[AX_Territory] Error al dar XP: AX_GangTab no disponible')
+    end
+end
+
 -- Callback para obtener tiempo de cooldown
 ESX.RegisterServerCallback('ax_territory:getCooldownTime', function(source, cb, territoryId)
     local territory = territories[territoryId]
@@ -88,13 +155,46 @@ ESX.RegisterServerCallback('ax_territory:getCooldownTime', function(source, cb, 
     cb(remaining)
 end)
 
+-- Callback para verificar si se puede atacar
+ESX.RegisterServerCallback('ax_territory:canAttack', function(source, cb, territoryId)
+    local territory = territories[territoryId]
+    
+    if not territory then
+        cb(false, 'Territorio no encontrado')
+        return
+    end
+    
+    if territory.status ~= 3 or not territory.owner then
+        cb(false, 'Este territorio no esta capturado')
+        return
+    end
+    
+    if activeCaptures[territoryId] then
+        cb(false, Locale['already_in_capture'])
+        return
+    end
+    
+    if territory.last_capture then
+        local elapsed = os.time() - territory.last_capture
+        if elapsed < Config.CooldownTime then
+            local remaining = Config.CooldownTime - elapsed
+            local hours = math.floor(remaining / 3600)
+            local minutes = math.floor((remaining % 3600) / 60)
+            cb(false, string.format('Cooldown activo. Tiempo restante: %dh %dm', hours, minutes))
+            return
+        end
+    end
+    
+    cb(true, '')
+end)
+
 -- Iniciar captura de territorio
 RegisterNetEvent('ax_territory:startCapture', function(territoryId, isAttack)
     local src = source
     local isGang, gangName = IsGangMember(src)
     
     if not isGang then
-        TriggerClientEvent('esx:showNotification', src, Config.Locale['not_gang_member'])
+        TriggerClientEvent('esx:showNotification', src, Locale['not_gang_member'])
         return
     end
     
@@ -103,7 +203,7 @@ RegisterNetEvent('ax_territory:startCapture', function(territoryId, isAttack)
     
     -- Verificar si ya hay captura activa
     if activeCaptures[territoryId] then
-        TriggerClientEvent('esx:showNotification', src, Config.Locale['already_in_capture'])
+        TriggerClientEvent('esx:showNotification', src, Locale['already_in_capture'])
         return
     end
     
@@ -128,14 +228,14 @@ RegisterNetEvent('ax_territory:startCapture', function(territoryId, isAttack)
                 for gangName, _ in pairs(Config.Gangs) do
                     if xPlayer.job.name == gangName then
                         TriggerClientEvent('esx:showNotification', playerId, 
-                            string.format(Config.Locale['territory_under_attack'], territory.name))
+                            string.format(Locale['territory_under_attack'], territory.name))
                     end
                 end
             end
         end
     end
     
-    TriggerClientEvent('esx:showNotification', src, Config.Locale['capture_started'])
+    TriggerClientEvent('esx:showNotification', src, Locale['capture_started'])
     TriggerClientEvent('ax_territory:updateTerritories', -1, territories)
     TriggerClientEvent('ax_territory:startCaptureUI', -1, territoryId, territory)
 end)
@@ -170,7 +270,7 @@ RegisterNetEvent('ax_territory:freeZone', function(territoryId)
     MySQL.update('UPDATE ax_territories SET owner = NULL, status = 1, last_capture = NULL, points = NULL WHERE id = ?', {
         territoryId
     }, function()
-        TriggerClientEvent('esx:showNotification', src, Config.Locale['zone_freed'])
+        TriggerClientEvent('esx:showNotification', src, Locale['zone_freed'])
         TriggerClientEvent('ax_territory:updateTerritories', -1, territories)
     end)
 end)
@@ -185,7 +285,7 @@ end
 -- Comando para abrir el menú de administración
 RegisterCommand('aterri', function(source, args)
     if not IsPlayerAdmin(source) then
-        TriggerClientEvent('esx:showNotification', source, Config.Locale['no_permission'])
+        TriggerClientEvent('esx:showNotification', source, Locale['no_permission'])
         return
     end
     
@@ -224,7 +324,7 @@ RegisterNetEvent('ax_territory:createTerritory', function(name)
                 last_point = nil
             }
             
-            TriggerClientEvent('esx:showNotification', src, Config.Locale['territory_created'])
+            TriggerClientEvent('esx:showNotification', src, Locale['territory_created'])
             TriggerClientEvent('ax_territory:openAdminMenu', src)
             TriggerClientEvent('ax_territory:updateTerritories', -1, territories)
         end
@@ -248,7 +348,7 @@ RegisterNetEvent('ax_territory:saveZone', function(territoryId, coords, size, ro
             territories[territoryId].size = size
             territories[territoryId].rotation = rotation
             
-            TriggerClientEvent('esx:showNotification', src, Config.Locale['zone_saved'])
+            TriggerClientEvent('esx:showNotification', src, Locale['zone_saved'])
             TriggerClientEvent('ax_territory:updateTerritories', -1, territories)
         end
     end)
@@ -262,7 +362,7 @@ RegisterNetEvent('ax_territory:deleteTerritory', function(territoryId)
     
     MySQL.query('DELETE FROM ax_territories WHERE id = ?', {territoryId}, function()
         territories[territoryId] = nil
-        TriggerClientEvent('esx:showNotification', src, Config.Locale['territory_deleted'])
+        TriggerClientEvent('esx:showNotification', src, Locale['territory_deleted'])
         TriggerClientEvent('ax_territory:openAdminMenu', src)
         TriggerClientEvent('ax_territory:updateTerritories', -1, territories)
     end)
@@ -310,13 +410,23 @@ CreateThread(function()
                         json.encode({}),
                         territoryId
                     }, function()
-                        -- Notificar al ganador
-                        for _, playerId in ipairs(ESX.GetPlayers()) do
-                            local xPlayer = ESX.GetPlayerFromId(playerId)
-                            if xPlayer and xPlayer.job.name == winner then
-                                TriggerClientEvent('esx:showNotification', playerId, 
-                                    string.format('Tu banda ha capturado el territorio %s!', territory.name))
-                            end
+                            -- Dar recompensa
+                            GiveGangReward(winner)
+                            
+                            -- Dar XP a la banda
+                            GiveGangXP(winner, Config.CaptureXP)
+
+                            -- Notificar a todos los miembros de la banda ganadora
+                                for _, playerId in ipairs(ESX.GetPlayers()) do
+                                local xPlayer = ESX.GetPlayerFromId(playerId)
+                                if xPlayer and xPlayer.job.name == winner then
+                                    TriggerClientEvent('esx:showNotification', playerId, 
+                                        string.format('Tu banda ha capturado %s! +$%s y +%s XP', 
+                                            territory.name, 
+                                            ESX.Math.GroupDigits(Config.CaptureReward),
+                                            Config.CaptureXP
+                                        ))
+                                end
                         end
                         
                         TriggerClientEvent('ax_territory:captureFinished', -1, territoryId, winner, territory)
@@ -417,4 +527,22 @@ CreateThread(function()
             end
         end
     end
+end)
+
+-- Establecer blip personalizado
+RegisterNetEvent('ax_territory:setCustomBlip', function(territoryId, blipSprite)
+    local src = source
+    
+    if not IsPlayerAdmin(src) then return end
+    
+    MySQL.update('UPDATE ax_territories SET custom_blip = ? WHERE id = ?', {
+        blipSprite,
+        territoryId
+    }, function(affectedRows)
+        if affectedRows > 0 then
+            territories[territoryId].custom_blip = blipSprite
+            TriggerClientEvent('esx:showNotification', src, 'Blip actualizado exitosamente')
+            TriggerClientEvent('ax_territory:updateTerritories', -1, territories)
+        end
+    end)
 end)

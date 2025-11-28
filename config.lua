@@ -1,108 +1,92 @@
 Config = {}
 
--- Configuración General
-Config.Framework = 'esx'
-Config.Locale = 'es'
-
 -- Permisos
 Config.AdminGroup = 'admin'
 
 -- Configuración de Territorios
-Config.DefaultZoneColor = {r = 255, g = 0, b = 0, a = 100}
-Config.ZoneHeight = 50.0 -- Altura del área de captura
+Config.ZoneHeight = 50.0
 
 Config.Gangs = {
     ['ballas'] = {
         name = 'Ballas',
-        color = {r = 145, g = 0, b = 200, a = 120} -- Morado
+        color = {r = 145, g = 0, b = 200, a = 120},
+        blipColor = 83  -- Morado
     },
     ['vagos'] = {
         name = 'Vagos',
-        color = {r = 255, g = 215, b = 0, a = 120} -- Amarillo oro
+        color = {r = 255, g = 215, b = 0, a = 120},
+        blipColor = 5  -- Amarillo
     },
     ['families'] = {
         name = 'Families',
-        color = {r = 0, g = 200, b = 0, a = 120} -- Verde gang
+        color = {r = 0, g = 200, b = 0, a = 120},
+        blipColor = 2  -- Verde
     },
     ['marabunta'] = {
         name = 'Marabunta',
-        color = {r = 0, g = 180, b = 255, a = 120} -- Azul celeste
+        color = {r = 0, g = 180, b = 255, a = 120},
+        blipColor = 3  -- Azul claro
     },
     ['cartel'] = {
         name = 'Cartel',
-        color = {r = 0, g = 40, b = 80, a = 120} -- Azul oscuro (estilo narco)
+        color = {r = 0, g = 40, b = 80, a = 120},
+        blipColor = 29  -- Azul oscuro
     },
-    ['triad'] = {
-        name = 'Triad',
-        color = {r = 200, g = 0, b = 0, a = 120} -- Rojo intenso
+    ['triads'] = {
+        name = 'Triads',
+        color = {r = 200, g = 0, b = 0, a = 120},
+        blipColor = 1  -- Rojo
     }
 }
 
--- Configuración de Captura
-Config.CaptureTime = 20000 -- 20 segundos para capturar un punto
-Config.TimeBetweenPoints = 60 -- 1 minuto entre capturas de puntos
-Config.PointsToCapture = 3 -- Puntos necesarios para conquistar
-Config.TimeBetweenConquers = 7200 -- 2 horas de cooldown (en segundos)
-Config.CaptureReward = 50000 -- Dinero que gana la banda al capturar
-
--- Textos
-Config.Locale = {
-    ['menu_title'] = 'TERRITORIOS',
-    ['create_territory'] = 'Crear Nuevo Territorio',
-    ['territory_name'] = 'Nombre del Territorio',
-    ['territory_name_desc'] = 'Ingresa el nombre para el nuevo territorio',
-    ['edit_zone'] = 'Editar Zona',
-    ['delete_territory'] = 'Eliminar',
-    ['confirm_delete'] = 'Confirmar Eliminacion',
-    ['confirm_delete_desc'] = 'Estas seguro de eliminar este territorio?',
-    ['territory_created'] = 'Territorio creado exitosamente',
-    ['territory_deleted'] = 'Territorio eliminado exitosamente',
-    ['zone_saved'] = 'Zona guardada exitosamente',
-    ['no_territories'] = 'No hay territorios creados',
-    ['no_permission'] = 'No tienes permisos para usar este comando',
-    ['zone_editor_title'] = 'EDITOR DE ZONA',
-    ['zone_editor_controls'] = 'Move: 8, 4, 5, 6 | Size: N, M | Rotate: 7, 9 | Speed: LSHIFT | Confirm: ENTER | Cancel: ESC',
+-- Sistema de Recompensas
+Config.CaptureReward = 10000 -- Dinero negro que gana la banda
+Config.GangAccounts = {
+    ['ballas'] = 'gang_ballas',
+    ['vagos'] = 'gang_vagos',
+    ['families'] = 'gang_families',
+    ['marabunta'] = 'gang_marabunta',
+    ['cartel'] = 'gang_cartel',
+    ['triads'] = 'gang_triads'
 }
+
+-- Sistema de XP
+Config.CaptureXP = 100 -- XP que gana cada miembro de la banda al capturar
+Config.UseGangXPSystem = true -- Activar/desactivar sistema de XP
 
 -- Configuración de Police
 Config.PoliceJob = 'police'
-Config.PoliceRanksCanView = {
-    'boss',
-    'lieutenant',
-    'sergeant'
-}
+Config.PoliceRanksCanView = {20, 21, 22, 23, 24, 25} -- Rango mínimo para ver territorios
 
 -- Configuración de Captura
-Config.CaptureTime = 60 -- 1 minuto (en segundos) para capturar
-Config.CaptureCheckInterval = 2000 -- Cada 2 segundos actualizar el progreso
-Config.PointsPerPlayer = 1 -- Puntos que suma cada jugador por intervalo
-Config.CooldownTime = 7200 -- 2 horas en segundos
-Config.HideUIKey = 'X' -- Tecla para ocultar UI
+Config.CaptureTime = 60
+Config.CaptureCheckInterval = 2000 -- ms
+Config.PointsPerPlayer = 1
+Config.CooldownTime = 60
+
+-- Tecla para ocultar UI (puedes cambiar el código)
+-- Lista de códigos: https://docs.fivem.net/docs/game-references/controls/
+Config.HideUIKey = 'F6' -- Texto que se muestra
+Config.HideUIKeyCode = 167 -- Código de la tecla X (cambiar este para cambiar la tecla)
 
 -- Colores de zonas
-Config.FreeZoneColor = {r = 255, g = 255, b = 255, a = 100} -- Blanco
-Config.DisputeBlinkSpeed = 500 -- Velocidad de parpadeo en ms
+Config.FreeZoneColor = {r = 255, g = 255, b = 255, a = 100}
+Config.DisputeBlinkSpeed = 500
 
 -- Comandos
 Config.CaptureCommand = 'capturar'
 Config.AttackCommand = 'atacar'
 
--- Textos adicionales
-Config.Locale['police_cant_capture'] = 'La policia no puede capturar territorios'
-Config.Locale['not_gang_member'] = 'No eres miembro de una banda'
-Config.Locale['territory_free'] = 'LIBRE'
-Config.Locale['territory_cooldown'] = 'EN COOLDOWN'
-Config.Locale['territory_available'] = 'DISPONIBLE'
-Config.Locale['conquest_in_progress'] = 'CONQUISTA EN PROGRESO'
-Config.Locale['conquering'] = 'CONQUISTANDO'
-Config.Locale['controlled_by'] = 'CONTROLADO POR'
-Config.Locale['time_remaining'] = 'TIEMPO RESTANTE'
-Config.Locale['status'] = 'ESTADO'
-Config.Locale['capture_instructions'] = 'Usa /%s para comenzar a capturar este territorio'
-Config.Locale['attack_instructions'] = 'Usa /%s para atacar este territorio. TODAS LAS BANDAS SERAN ALERTADAS'
-Config.Locale['hide_ui_hint'] = 'Presiona %s para ocultar/mostrar la interfaz'
-Config.Locale['territory_under_attack'] = 'El territorio %s esta siendo atacado!'
-Config.Locale['free_zone'] = 'Liberar Zona'
-Config.Locale['zone_freed'] = 'Zona liberada exitosamente'
-Config.Locale['already_in_capture'] = 'Ya hay una captura en progreso en este territorio'
-Config.Locale['capture_started'] = 'Captura iniciada! Defiende el territorio!'
+-- Blips disponibles para territorios
+Config.AvailableBlips = {
+    {id = 1, name = 'Sin Blip', sprite = nil},
+    {id = 2, name = 'Arma', sprite = 110},
+    {id = 3, name = 'Cuchillo', sprite = 432},
+    {id = 4, name = 'Puño', sprite = 311},
+    {id = 5, name = 'Granada', sprite = 156},
+    {id = 6, name = 'Rifle', sprite = 110},
+    {id = 7, name = 'Pistola', sprite = 150},
+    {id = 8, name = 'Calavera', sprite = 84},
+    {id = 9, name = 'Alerta', sprite = 161},
+    {id = 10, name = 'Corona', sprite = 478}
+}

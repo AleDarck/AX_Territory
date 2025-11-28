@@ -7,6 +7,21 @@ local captureInProgress = {}
 local uiVisible = true
 local isDead = false
 
+-- Locales
+local Locale = {
+    ['create_territory'] = 'Crear Nuevo Territorio',
+    ['territory_name'] = 'Nombre del Territorio',
+    ['territory_name_desc'] = 'Ingresa el nombre para el nuevo territorio',
+    ['edit_zone'] = 'Editar Zona',
+    ['delete_territory'] = 'Eliminar',
+    ['confirm_delete'] = 'Confirmar Eliminacion',
+    ['confirm_delete_desc'] = 'Estas seguro de eliminar este territorio?',
+    ['zone_editor_controls'] = 'Move: 8,4,5,6 | Cuadrado: 1,3 | Ancho: K,L | Largo: N,M | Rotar: 7,9 | Speed: SHIFT | OK: ENTER | Cancel: ESC',
+    ['not_gang_member'] = 'No eres miembro de una banda',
+    ['menu_title'] = 'TERRITORIOS',
+    ['free_zone'] = 'Liberar Zona'
+}
+
 -- Recibir actualización de territorios
 RegisterNetEvent('ax_territory:updateTerritories', function(data)
     territories = data
@@ -20,9 +35,15 @@ end)
 
 -- Solicitar territorios al cargar
 CreateThread(function()
-    Wait(1000)
+    while not ESX.IsPlayerLoaded() do
+        Wait(500)
+    end
+    
+    Wait(2000) -- Esperar un poco más para asegurar carga completa
+    
     ESX.TriggerServerCallback('ax_territory:getTerritories', function(data)
         territories = data
+        UpdateTerritoryBlips()
     end)
 end)
 
@@ -54,7 +75,7 @@ function IsPlayerPoliceViewer()
     
     if playerData.job.name == Config.PoliceJob then
         for _, rank in ipairs(Config.PoliceRanksCanView) do
-            if playerData.job.grade_name == rank then
+            if playerData.job.grade == rank then
                 return true
             end
         end
@@ -91,7 +112,7 @@ function OpenAdminMenu()
     
     -- Botón para crear nuevo territorio
     table.insert(elements, {
-        title = Config.Locale['create_territory'],
+        title = Locale['create_territory'],
         icon = 'plus',
         onSelect = function()
             CreateTerritoryDialog()
@@ -111,7 +132,7 @@ function OpenAdminMenu()
     
     lib.registerContext({
         id = 'ax_territory_admin',
-        title = Config.Locale['menu_title'],
+        title = Locale['menu_title'],
         options = elements
     })
     
@@ -119,11 +140,11 @@ function OpenAdminMenu()
 end
 
 function CreateTerritoryDialog()
-    local input = lib.inputDialog(Config.Locale['create_territory'], {
+    local input = lib.inputDialog(Locale['create_territory'], {
         {
             type = 'input',
-            label = Config.Locale['territory_name'],
-            description = Config.Locale['territory_name_desc'],
+            label = Locale['territory_name'],
+            description = Locale['territory_name_desc'],
             required = true,
             min = 3,
             max = 50
@@ -142,26 +163,33 @@ function OpenTerritoryOptions(territoryId, territory)
         menu = 'ax_territory_admin',
         options = {
             {
-                title = Config.Locale['edit_zone'],
+                title = Locale['edit_zone'],
                 icon = 'edit',
                 onSelect = function()
                     StartZoneEditor(territoryId, territory)
                 end
             },
             {
-                title = Config.Locale['free_zone'],
+                title = 'Cambiar Blip',
+                icon = 'map-pin',
+                onSelect = function()
+                    OpenBlipSelector(territoryId, territory)
+                end
+            },
+            {
+                title = Locale['free_zone'],
                 icon = 'unlock',
                 onSelect = function()
                     TriggerServerEvent('ax_territory:freeZone', territoryId)
                 end
             },
             {
-                title = Config.Locale['delete_territory'],
+                title = Locale['delete_territory'],
                 icon = 'trash',
                 onSelect = function()
                     local alert = lib.alertDialog({
-                        header = Config.Locale['confirm_delete'],
-                        content = Config.Locale['confirm_delete_desc'],
+                        header = Locale['confirm_delete'],
+                        content = Locale['confirm_delete_desc'],
                         centered = true,
                         cancel = true
                     })
@@ -175,6 +203,30 @@ function OpenTerritoryOptions(territoryId, territory)
     })
     
     lib.showContext('ax_territory_options')
+end
+
+function OpenBlipSelector(territoryId, territory)
+    local elements = {}
+    
+    for _, blipData in ipairs(Config.AvailableBlips) do
+        table.insert(elements, {
+            title = blipData.name,
+            icon = blipData.sprite and 'map-marker-alt' or 'ban',
+            description = blipData.sprite and ('Sprite ID: ' .. blipData.sprite) or 'Sin blip adicional',
+            onSelect = function()
+                TriggerServerEvent('ax_territory:setCustomBlip', territoryId, blipData.sprite)
+            end
+        })
+    end
+    
+    lib.registerContext({
+        id = 'ax_territory_blip_selector',
+        title = 'Seleccionar Blip',
+        menu = 'ax_territory_options',
+        options = elements
+    })
+    
+    lib.showContext('ax_territory_blip_selector')
 end
 
 -- Editor de zona
@@ -203,7 +255,7 @@ function StartZoneEditor(territoryId, territory)
     SetFrontendActive(true)
     ActivateFrontendMenu(GetHashKey('FE_MENU_VERSION_MP_PAUSE'), false, -1)
     
-    ESX.ShowNotification(Config.Locale['zone_editor_controls'])
+    ESX.ShowNotification(Locale['zone_editor_controls'])
     
     CreateThread(function()
         while editingZone do
@@ -272,6 +324,14 @@ function StartZoneEditor(territoryId, territory)
                 currentZoneData.size.height = currentZoneData.size.height + sizeSpeed * speedMultiplier
                 currentZoneData.size.width = currentZoneData.size.width + sizeSpeed * speedMultiplier
             end
+
+            if IsDisabledControlPressed(0, 311) then -- K (reducir ancho)
+                currentZoneData.size.width = math.max(10.0, currentZoneData.size.width - sizeSpeed * speedMultiplier)
+            end
+            
+            if IsDisabledControlPressed(0, 7) then -- L (aumentar ancho)
+                currentZoneData.size.width = currentZoneData.size.width + sizeSpeed * speedMultiplier
+            end
             
             -- Rotación - NUMPAD 7, 9
             if IsDisabledControlPressed(0, 117) then -- NUMPAD 7 (rotar izquierda)
@@ -306,79 +366,18 @@ function StartZoneEditor(territoryId, territory)
     end)
 end
 
-function DrawZoneBox(coords, size, rotation)
-    local halfWidth = size.width / 2
-    local halfHeight = size.height / 2
-    local zBase = coords.z
-    local zTop = coords.z + Config.ZoneHeight
-    
-    local rad = math.rad(rotation)
-    local cos = math.cos(rad)
-    local sin = math.sin(rad)
-    
-    -- Calcular las 4 esquinas del rectángulo rotado
-    local function rotatePoint(x, y)
-        return {
-            x = coords.x + (x * cos - y * sin),
-            y = coords.y + (x * sin + y * cos)
-        }
-    end
-    
-    local corners = {
-        rotatePoint(-halfWidth, -halfHeight),
-        rotatePoint(halfWidth, -halfHeight),
-        rotatePoint(halfWidth, halfHeight),
-        rotatePoint(-halfWidth, halfHeight)
-    }
-    
-    -- Dibujar líneas del suelo
-    for i = 1, 4 do
-        local next = i % 4 + 1
-        DrawLine(
-            corners[i].x, corners[i].y, zBase,
-            corners[next].x, corners[next].y, zBase,
-            255, 0, 0, 255
-        )
-    end
-    
-    -- Dibujar líneas superiores
-    for i = 1, 4 do
-        local next = i % 4 + 1
-        DrawLine(
-            corners[i].x, corners[i].y, zTop,
-            corners[next].x, corners[next].y, zTop,
-            255, 0, 0, 255
-        )
-    end
-    
-    -- Dibujar líneas verticales
-    for i = 1, 4 do
-        DrawLine(
-            corners[i].x, corners[i].y, zBase,
-            corners[i].x, corners[i].y, zTop,
-            255, 0, 0, 255
-        )
-    end
-    
-    -- Dibujar punto central
-    DrawMarker(
-        28, -- Marker type
-        coords.x, coords.y, coords.z,
-        0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0,
-        0.5, 0.5, 0.5,
-        255, 255, 0, 200,
-        false, true, 2, false, nil, nil, false
-    )
-end
-
 -- Mostrar territorios en el mapa
 local territoryBlips = {}
 
 function UpdateTerritoryBlips()
     -- Limpiar blips anteriores
-    for _, blip in pairs(territoryBlips) do
-        RemoveBlip(blip)
+    for _, blipData in pairs(territoryBlips) do
+        if type(blipData) == 'table' then
+            if blipData.area then RemoveBlip(blipData.area) end
+            if blipData.custom then RemoveBlip(blipData.custom) end
+        else
+            RemoveBlip(blipData)
+        end
     end
     territoryBlips = {}
     
@@ -387,38 +386,60 @@ function UpdateTerritoryBlips()
     -- Crear nuevos blips
     for id, territory in pairs(territories) do
         if territory.coords.x ~= 0 then
-            local blip = AddBlipForArea(
+            -- Blip de área (cuadrado)
+            local areaBlip = AddBlipForArea(
                 territory.coords.x,
                 territory.coords.y,
                 territory.coords.z,
                 territory.size.width,
                 territory.size.height
             )
-            SetBlipRotation(blip, math.floor(territory.rotation))
             
-            -- Color según estado
-            local color = 0
+            SetBlipRotation(areaBlip, math.floor(territory.rotation))
+            
+            -- Color según estado y dueño
             if territory.status == 1 or not territory.owner then
-                -- Libre - Blanco
-                color = 0
-                SetBlipColour(blip, color)
+                SetBlipColour(areaBlip, 0)
+                SetBlipAlpha(areaBlip, 100)
             elseif territory.status == 2 then
-                -- En disputa - Color de la banda pero parpadeando (se maneja en otro thread)
-                color = 1 -- Rojo temporal
-                SetBlipColour(blip, color)
+                SetBlipColour(areaBlip, 1)
+                SetBlipAlpha(areaBlip, 150)
             elseif territory.status == 3 and territory.owner then
-                -- Capturado - Color de la banda
-                if Config.Gangs[territory.owner] then
-                    -- Convertir RGB a color de blip (aproximado)
-                    color = 1 -- Por ahora rojo, puedes mapear colores específicos
-                    SetBlipColour(blip, color)
-                end
+                local gangColor = GetGangBlipColor(territory.owner)
+                SetBlipColour(areaBlip, gangColor)
+                SetBlipAlpha(areaBlip, 150)
             end
             
-            SetBlipAlpha(blip, 150)
-            territoryBlips[id] = blip
+            territoryBlips[id] = {area = areaBlip}
+            
+            -- Blip personalizado (si existe)
+            if territory.custom_blip then
+                local customBlip = AddBlipForCoord(
+                    territory.coords.x,
+                    territory.coords.y,
+                    territory.coords.z
+                )
+                
+                SetBlipSprite(customBlip, territory.custom_blip)
+                SetBlipScale(customBlip, 0.8)
+                SetBlipColour(customBlip, 1)
+                SetBlipAsShortRange(customBlip, true)
+                
+                BeginTextCommandSetBlipName("STRING")
+                AddTextComponentSubstringPlayerName(territory.name)
+                EndTextCommandSetBlipName(customBlip)
+                
+                territoryBlips[id].custom = customBlip
+            end
         end
     end
+end
+
+function GetGangBlipColor(gangName)
+    if Config.Gangs[gangName] and Config.Gangs[gangName].blipColor then
+        return Config.Gangs[gangName].blipColor
+    end
+    return 0 -- Blanco por defecto
 end
 
 -- Thread para parpadeo de zonas en disputa
@@ -566,7 +587,11 @@ end)
 
 -- Cargar blips al inicio
 CreateThread(function()
-    Wait(2000)
+    while not ESX.IsPlayerLoaded() do
+        Wait(500)
+    end
+    
+    Wait(3000)
     UpdateTerritoryBlips()
 end)
 
@@ -595,7 +620,7 @@ RegisterCommand(Config.CaptureCommand, function()
     
     local isGang, gangName = IsPlayerGangMember()
     if not isGang then
-        ESX.ShowNotification(Config.Locale['not_gang_member'])
+        ESX.ShowNotification(Locale['not_gang_member'])
         return
     end
     
@@ -622,7 +647,7 @@ RegisterCommand(Config.AttackCommand, function()
     
     local isGang, gangName = IsPlayerGangMember()
     if not isGang then
-        ESX.ShowNotification(Config.Locale['not_gang_member'])
+        ESX.ShowNotification(Locale['not_gang_member'])
         return
     end
     
@@ -632,21 +657,21 @@ RegisterCommand(Config.AttackCommand, function()
         return
     end
     
-    if territory.last_capture then
-        local elapsed = os.time() - territory.last_capture
-        if elapsed < Config.CooldownTime then
-            ESX.ShowNotification('Este territorio aun esta en cooldown')
+    -- Verificar cooldown en el servidor
+    ESX.TriggerServerCallback('ax_territory:canAttack', function(canAttack, message)
+        if not canAttack then
+            ESX.ShowNotification(message)
             return
         end
-    end
-    
-    TriggerServerEvent('ax_territory:startCapture', playerInsideTerritory, true)
-    
-    -- Notificar inmediatamente al servidor que estás capturando
-    Wait(500) -- Esperar a que el servidor inicie la captura
-    if not isDead then
-        TriggerServerEvent('ax_territory:updateCaptureParticipant', playerInsideTerritory, true, false)
-    end
+        
+        TriggerServerEvent('ax_territory:startCapture', playerInsideTerritory, true)
+        
+        -- Notificar inmediatamente al servidor que estás capturando
+        Wait(500)
+        if not isDead then
+            TriggerServerEvent('ax_territory:updateCaptureParticipant', playerInsideTerritory, true, false)
+        end
+    end, playerInsideTerritory)
 end)
 
 -- Tecla para ocultar/mostrar UI
@@ -658,7 +683,27 @@ RegisterCommand('toggleTerritoryUI', function()
         ShowTerritoryUI(playerInsideTerritory, territories[playerInsideTerritory])
     end
 end)
+
 RegisterKeyMapping('toggleTerritoryUI', 'Ocultar/Mostrar UI de Territorios', 'keyboard', Config.HideUIKey)
+
+-- Thread alternativo para detectar la tecla personalizada
+CreateThread(function()
+    while true do
+        Wait(0)
+        if IsControlJustPressed(0, Config.HideUIKeyCode) then
+            ExecuteCommand('toggleTerritoryUI')
+        end
+    end
+end)
+
+-- Evento para recargar territorios manualmente
+RegisterNetEvent('esx:playerLoaded', function(xPlayer)
+    Wait(3000)
+    ESX.TriggerServerCallback('ax_territory:getTerritories', function(data)
+        territories = data
+        UpdateTerritoryBlips()
+    end)
+end)
 
 -- Eventos de actualización
 RegisterNetEvent('ax_territory:startCaptureUI', function(territoryId, territory)
@@ -737,4 +782,10 @@ end)
 RegisterNetEvent('esx:onPlayerSpawn', function()
     Wait(1000)
     isDead = false
+end)
+
+-- Actualizar blips cuando cambia el job
+RegisterNetEvent('esx:setJob', function(job)
+    Wait(1000)
+    UpdateTerritoryBlips()
 end)
